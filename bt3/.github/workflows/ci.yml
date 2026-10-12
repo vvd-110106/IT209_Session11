@@ -1,0 +1,47 @@
+name: Java CI with Gradle & Dependency Caching
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Test (Java 17 - Gradle)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kiểm tra mã nguồn (Checkout Code)
+        uses: actions/checkout@v4
+
+      - name: Thiết lập môi trường Java JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Phân quyền thực thi cho Gradle Wrapper
+        run: chmod +x ./gradlew
+
+      - name: Kiểm tra phiên bản Gradle & Môi trường
+        run: ./gradlew --version
+
+      - name: Thực thi kiểm thử tự động (Unit Tests)
+        run: ./gradlew test --no-daemon
+
+      - name: Đóng gói sản phẩm (Build JAR)
+        run: ./gradlew build -x test --no-daemon
+
+      - name: Lưu trữ báo cáo kiểm thử (Upload Test Report Artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-test-reports
+          path: build/reports/tests/test/
+          if-no-files-found: ignore
